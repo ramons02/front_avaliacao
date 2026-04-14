@@ -1,0 +1,59 @@
+<div class="container mt-4">
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Cadastrar Novo Paciente</h4>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Nome Completo</label>
+          <input type="text" [(ngModel)]="novoPaciente.nome" class="form-control" placeholder="Ex: João Silva">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-bold">Peso</label>
+          <input type="text" [(ngModel)]="novoPaciente.peso" class="form-control" placeholder="Ex: 80kg">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-bold">Altura</label>
+          <input type="text" [(ngModel)]="novoPaciente.altura" class="form-control" placeholder="Ex: 1.75">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-bold">Dias Pós RLCA</label>
+          <input type="text" [(ngModel)]="novoPaciente.diasPosRLCA" class="form-control" placeholder="Ex: 30">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button (click)="cadastrar()" class="btn btn-success w-100">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="text-primary">Pacientes em Reabilitação</h2>
+  </div>
+
+  <table class="table table-hover shadow-sm border">
+    <thead class="table-dark">
+    <tr>
+      <th>Nome</th>
+      <th>Peso</th>
+      <th>Altura</th>
+      <th>Dias Pós RLCA</th>
+      <th class="text-center">Ações</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let p of pacientes">
+      <td>{{ p.nome }}</td>
+      <td>{{ p.peso }}</td>
+      <td>{{ p.altura }}</td>
+      <td>{{ p.diasPosRLCA }} dias</td>
+      <td class="text-center">
+        <button class="btn btn-sm btn-outline-primary shadow-sm" routerLink="/avaliacao">
+          Iniciar Avaliação
+        </button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>
