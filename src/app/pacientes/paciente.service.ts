@@ -41,6 +41,7 @@ export class PacienteService {
 // No seu arquivo paciente.service.ts
   private readonly API_PACIENTES = 'https://hupstesteback-production.up.railway.app/api/v1/pacientes';
   private readonly API_AVALIACOES = 'https://hupstesteback-production.up.railway.app/api/v1/avaliacoes';
+
   constructor(private http: HttpClient) {}
   // ... resto do código
 
