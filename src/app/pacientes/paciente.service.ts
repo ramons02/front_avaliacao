@@ -36,12 +36,11 @@ export interface Avaliacao {
 })
 export class PacienteService {
   // SUBSTITUA pelo seu link da Railway (exemplo abaixo)
-  private readonly BASE_URL = 'https://hupsteste-production.up.railway.app';
+
 
 // No seu arquivo paciente.service.ts
-  private readonly API_PACIENTES = 'https://hupstesteback-production.up.railway.app/api/pacientes';
-  private readonly API_AVALIACOES = 'https://hupstesteback-production.up.railway.app/api/avaliacoes';
-
+  private readonly API_PACIENTES = 'https://hupstesteback-production.up.railway.app/api/v1/pacientes';
+  private readonly API_AVALIACOES = 'https://hupstesteback-production.up.railway.app/api/v1/avaliacoes';
   constructor(private http: HttpClient) {}
   // ... resto do código
 
