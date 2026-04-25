@@ -13,6 +13,7 @@ pub fn login_page() -> Html {
     let carregando = use_state(|| false);
     let navigator = use_navigator().unwrap();
 
+
     let on_email = {
         let email = email.clone();
         Callback::from(move |e: InputEvent| {
