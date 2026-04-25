@@ -2,7 +2,8 @@ use gloo_net::http::Request;
 use crate::auth::obter_token;
 use crate::models::{Avaliacao, LoginRequest, LoginResponse, Paciente};
 
-const BASE: &str = "/api";
+const BASE: &str = "/api/v1";
+
 
 fn bearer() -> String {
     format!("Bearer {}", obter_token().unwrap_or_default())
