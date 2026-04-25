@@ -1,8 +1,6 @@
 {
+  "version": 2,
   "cleanUrls": true,
-  "installCommand": "rustup target add wasm32-unknown-unknown && curl -L https://github.com/trunk-rs/trunk/releases/latest/download/trunk-x86_64-unknown-linux-musl.tar.gz | tar -xzf-",
-  "buildCommand": "./trunk build --release",
-  "outputDirectory": "dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
