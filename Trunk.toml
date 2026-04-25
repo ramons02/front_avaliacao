@@ -1,0 +1,6 @@
+[serve]
+port = 3001
+
+[[proxy]]
+rewrite = "/api"
+backend = "http://localhost:8080/api"
