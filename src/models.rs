@@ -9,8 +9,7 @@ pub struct Paciente {
     #[serde(rename = "dataCirugia")]
     pub data_cirugia: String,
 
-    // AQUI ESTAVA O ERRO: Mudei de 'menbro' para 'membro' (com M)
-    #[serde(rename = "membro_operado")]
+    #[serde(rename = "membroOperado")]
     pub membro_operado: Option<String>,
 
     #[serde(rename = "diasPosOperatorio")]
