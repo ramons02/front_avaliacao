@@ -2,12 +2,11 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use crate::api;
+use crate::auth::salvar_token;
 use crate::router::Route;
-use crate::components::auth_context::use_auth;
 
 #[function_component(LoginPage)]
 pub fn login_page() -> Html {
-    let auth = use_auth();
     let email = use_state(String::new);
     let senha = use_state(String::new);
     let erro = use_state(|| Option::<String>::None);
@@ -37,7 +36,6 @@ pub fn login_page() -> Html {
         let erro = erro.clone();
         let carregando = carregando.clone();
         let navigator = navigator.clone();
-        let fazer_login = auth.fazer_login.clone();
 
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
@@ -48,7 +46,6 @@ pub fn login_page() -> Html {
             let erro = erro.clone();
             let carregando = carregando.clone();
             let navigator = navigator.clone();
-            let fazer_login = fazer_login.clone();
 
             carregando.set(true);
             erro.set(None);
@@ -56,7 +53,7 @@ pub fn login_page() -> Html {
             spawn_local(async move {
                 match api::login(&email_val, &senha_val).await {
                     Ok(resp) => {
-                        fazer_login.emit(resp.token);
+                        salvar_token(&resp.token);
                         navigator.push(&Route::Pacientes);
                     }
                     Err(msg) => {
