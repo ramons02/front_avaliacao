@@ -1,2 +1,4 @@
 /dist
 /target
+.vercel
+.env*.local

@@ -1,0 +1,56 @@
+# Rust build artifacts - CRITICAL: Large and not needed in Vercel
+target/
+*.o
+*.so
+*.a
+*.rlib
+*.rmeta
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+Cargo.lock
+
+# Testing & Coverage
+coverage/
+.nyc_output
+**/*.test.rs
+**/*.spec.rs
+
+# IDE & Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+
+# Git & SCM
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# Build artifacts (except dist - needed!)
+build/
+*.wasm.map
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Cache
+.cache/
+.eslintcache
+.prettier-cache
+
+# Environment
+.env
+.env.local
+.env.*.local
+
