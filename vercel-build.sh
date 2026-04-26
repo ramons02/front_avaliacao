@@ -9,4 +9,4 @@ rustup target add wasm32-unknown-unknown
 curl -fsSL https://github.com/trunk-rs/trunk/releases/download/v0.21.14/trunk-x86_64-unknown-linux-musl.tar.gz | tar -xzf-
 chmod +x trunk
 
-./trunk build --release
+./trunk build --release --config trunk.toml
