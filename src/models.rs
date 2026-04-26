@@ -26,11 +26,11 @@ pub struct Paciente {
     pub peso: String,
     #[serde(deserialize_with = "de_numero_ou_string")]
     pub altura: String,
-    #[serde(rename = "dataCirurgia")]
+    #[serde(rename = "dataCirugia")]
     pub data_cirugia: String,
-    #[serde(rename = "membroOp")]
+    #[serde(rename = "membro_operado")]
     pub membro_operado: Option<String>,
-    #[serde(rename = "diasPosRlca")]
+    #[serde(rename = "diasPosOperatorio")]
     pub dias_pos_operatorio: Option<i64>,
 }
 
