@@ -2,9 +2,18 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use crate::api;
+use crate::auth::remover_token;
 use crate::models::Paciente;
 use crate::router::Route;
 use crate::pdf;
+
+fn redirecionar_login() {
+    remover_token();
+    let _ = web_sys::window()
+        .unwrap()
+        .location()
+        .set_href("/login");
+}
 
 fn calcular_dias(data_cirugia: &str) -> Option<i64> {
     if data_cirugia.is_empty() { return None; }
@@ -42,18 +51,23 @@ pub fn paciente_list_page() -> Html {
 
     let salvando = use_state(|| false);
     let carregando_lista = use_state(|| false);
+    let erro_lista = use_state(|| Option::<String>::None);
     let carregando_pdf: UseStateHandle<std::collections::HashMap<String, bool>> = use_state(std::collections::HashMap::new);
 
     {
         let pacientes = pacientes.clone();
         let carregando_lista = carregando_lista.clone();
+        let erro_lista = erro_lista.clone();
         use_effect_with((), move |_| {
             let pacientes = pacientes.clone();
             let carregando_lista = carregando_lista.clone();
+            let erro_lista = erro_lista.clone();
             spawn_local(async move {
                 carregando_lista.set(true);
-                if let Ok(lista) = api::listar_pacientes().await {
-                    pacientes.set(lista);
+                match api::listar_pacientes().await {
+                    Ok(lista) => { erro_lista.set(None); pacientes.set(lista); }
+                    Err(e) if e == "UNAUTHORIZED" => redirecionar_login(),
+                    Err(e) => erro_lista.set(Some(e)),
                 }
                 carregando_lista.set(false);
             });
@@ -64,13 +78,17 @@ pub fn paciente_list_page() -> Html {
     let recarregar = {
         let pacientes = pacientes.clone();
         let carregando_lista = carregando_lista.clone();
+        let erro_lista = erro_lista.clone();
         Callback::from(move |_: ()| {
             let pacientes = pacientes.clone();
             let carregando_lista = carregando_lista.clone();
+            let erro_lista = erro_lista.clone();
             spawn_local(async move {
                 carregando_lista.set(true);
-                if let Ok(lista) = api::listar_pacientes().await {
-                    pacientes.set(lista);
+                match api::listar_pacientes().await {
+                    Ok(lista) => { erro_lista.set(None); pacientes.set(lista); }
+                    Err(e) if e == "UNAUTHORIZED" => redirecionar_login(),
+                    Err(e) => erro_lista.set(Some(e)),
                 }
                 carregando_lista.set(false);
             });
@@ -195,6 +213,24 @@ pub fn paciente_list_page() -> Html {
             </div>
 
             <h2 class="text-primary border-bottom pb-2">{"Pacientes em Reabilitação"}</h2>
+
+            if *carregando_lista {
+                <div class="text-center py-5">
+                    <span class="spinner-border text-primary" role="status"></span>
+                    <p class="text-muted mt-2">{"Carregando pacientes..."}</p>
+                </div>
+            }
+
+            if let Some(erro) = (*erro_lista).clone() {
+                <div class="alert alert-danger d-flex align-items-center justify-content-between mt-3" role="alert">
+                    <span><i class="bi bi-exclamation-triangle-fill me-2"></i>{ format!("Erro ao carregar: {}. Tente novamente.", erro) }</span>
+                    <button class="btn btn-sm btn-outline-danger ms-3"
+                        onclick={let r = recarregar.clone(); Callback::from(move |_: MouseEvent| r.emit(()))}>
+                        <i class="bi bi-arrow-clockwise me-1"></i>{"Tentar novamente"}
+                    </button>
+                </div>
+            }
+
             <div class="table-responsive">
                 <table class="table table-hover shadow-sm border bg-white text-center">
                     <thead class="table-dark">

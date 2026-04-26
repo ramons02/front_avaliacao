@@ -32,6 +32,12 @@ pub async fn listar_pacientes() -> Result<Vec<Paciente>, String> {
         .send()
         .await
         .map_err(|e| e.to_string())?;
+    if resp.status() == 401 || resp.status() == 403 {
+        return Err("UNAUTHORIZED".to_string());
+    }
+    if !resp.ok() {
+        return Err(format!("Servidor retornou erro {}", resp.status()));
+    }
     resp.json::<Vec<Paciente>>().await.map_err(|e| e.to_string())
 }
 
@@ -41,6 +47,12 @@ pub async fn buscar_paciente(id: &str) -> Result<Paciente, String> {
         .send()
         .await
         .map_err(|e| e.to_string())?;
+    if resp.status() == 401 || resp.status() == 403 {
+        return Err("UNAUTHORIZED".to_string());
+    }
+    if !resp.ok() {
+        return Err(format!("Servidor retornou erro {}", resp.status()));
+    }
     resp.json::<Paciente>().await.map_err(|e| e.to_string())
 }
 
@@ -84,6 +96,12 @@ pub async fn buscar_avaliacoes_paciente(paciente_id: &str) -> Result<Vec<Avaliac
         .send()
         .await
         .map_err(|e| e.to_string())?;
+    if resp.status() == 401 || resp.status() == 403 {
+        return Err("UNAUTHORIZED".to_string());
+    }
+    if !resp.ok() {
+        return Err(format!("Servidor retornou erro {}", resp.status()));
+    }
     resp.json::<Vec<Avaliacao>>().await.map_err(|e| e.to_string())
 }
 
