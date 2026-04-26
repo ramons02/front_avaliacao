@@ -1,9 +1,9 @@
 use plotters::prelude::*;
-use crate::models::{Avaliacao, Paciente, calcular_lsi};
+use crate::models::{Avaliacao, Paciente};
 
 // ── Gráfico de barras (Protegido contra erro 101 e ciente do membro operado) ────
 pub fn draw_comparison_bars(
-    paciente: &Paciente,
+    _paciente: &Paciente,
     ultima: &Avaliacao,
     membro_op: &str,
 ) -> String {
@@ -234,14 +234,4 @@ pub fn gerar_html_relatorio(paciente: &Paciente, avaliacoes: &[Avaliacao], membr
 
 fn html_sem_avaliacoes(p: &Paciente) -> String {
     format!("<html><body style='font-family:sans-serif; padding:50px;'><h2>Nenhuma avaliação encontrada para {}</h2></body></html>", p.nome)
-}
-
-pub fn abrir_impressao(html: &str) {
-    let window = web_sys::window().unwrap();
-    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(
-        &js_sys::Array::of1(&js_sys::Uint8Array::from(html.as_bytes())),
-        web_sys::BlobPropertyBag::new().type_("text/html")
-    ).unwrap();
-    let url = web_sys::Url::create_object_url_with_blob(&blob).unwrap();
-    window.open_with_url(&url).ok();
 }

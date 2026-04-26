@@ -6,6 +6,7 @@ use crate::api;
 use crate::models::{Avaliacao, Paciente, calcular_lsi, parse_decimal};
 use crate::router::Route;
 use crate::components::numeric_input::NumericInput;
+use crate::components::lsi_chart::LsiChart;
 
 #[derive(Properties, PartialEq)]
 pub struct AvaliacaoFormProps {
@@ -41,6 +42,7 @@ pub fn avaliacao_form_page(props: &AvaliacaoFormProps) -> Html {
     let salvando = use_state(|| false);
     let mensagem_sucesso = use_state(|| Option::<String>::None);
     let erro_msg = use_state(|| Option::<String>::None);
+    let avaliacoes_hist = use_state(Vec::<Avaliacao>::new);
     let navigator = use_navigator().unwrap();
 
     // Busca paciente pelo ID da rota
@@ -54,6 +56,21 @@ pub fn avaliacao_form_page(props: &AvaliacaoFormProps) -> Html {
                 match api::buscar_paciente(&id).await {
                     Ok(p) => paciente.set(Some(p)),
                     Err(e) => log::error!("Erro ao buscar paciente: {}", e),
+                }
+            });
+        });
+    }
+
+    // Busca histórico de avaliações
+    {
+        let paciente_id = props.paciente_id.clone();
+        let avaliacoes_hist = avaliacoes_hist.clone();
+        use_effect_with(paciente_id.clone(), move |id| {
+            let id = id.clone();
+            let avaliacoes_hist = avaliacoes_hist.clone();
+            spawn_local(async move {
+                if let Ok(lista) = api::buscar_avaliacoes_paciente(&id).await {
+                    avaliacoes_hist.set(lista);
                 }
             });
         });
@@ -179,6 +196,14 @@ pub fn avaliacao_form_page(props: &AvaliacaoFormProps) -> Html {
                     { if esta_apto { "Paciente Liberado" } else { "Manter Fisioterapia" } }
                 </h3>
             </div>
+
+            // ── Evolução do LSI ──
+            if !(*avaliacoes_hist).is_empty() {
+                <div class="mt-4 p-3 bg-light rounded border">
+                    <h5 class="text-secondary border-bottom pb-2 mb-3">{"Evolução do LSI"}</h5>
+                    <LsiChart avaliacoes={(*avaliacoes_hist).clone()} canvas_id={"lsi-evolution-chart"} />
+                </div>
+            }
 
             // ── Mensagens ──
             if let Some(msg) = (*mensagem_sucesso).clone() {

@@ -87,16 +87,3 @@ pub async fn buscar_avaliacoes_paciente(paciente_id: &str) -> Result<Vec<Avaliac
     resp.json::<Vec<Avaliacao>>().await.map_err(|e| e.to_string())
 }
 
-pub async fn gerar_relatorio_pdf(paciente_id: &str) -> Result<Vec<u8>, String> {
-    let resp = Request::get(&format!("{BASE}/avaliacoes/paciente/{paciente_id}/relatorio"))
-        .header("Authorization", &bearer())
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    if resp.ok() {
-        resp.binary().await.map_err(|e| e.to_string())
-    } else {
-        Err(format!("Erro ao gerar PDF ({})", resp.status()))
-    }
-}

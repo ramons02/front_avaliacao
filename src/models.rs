@@ -66,30 +66,9 @@ pub struct LoginResponse {
     pub token: String,
 }
 
-// ── LÓGICA DE CORES DEFINITIVA ──
-pub fn definir_cores_por_membro(membro_op: &str) -> (String, String) {
-    if membro_op.to_lowercase().contains("dir") {
-        ("Esquerda (Azul)".to_string(), "Direita (Vermelho)".to_string())
-    } else {
-        ("Direita (Azul)".to_string(), "Esquerda (Vermelho)".to_string())
-    }
-}
-
 pub fn calcular_lsi(a: f64, b: f64) -> f64 {
     if a == 0.0 || b == 0.0 { return 0.0; }
     (a.min(b) / a.max(b)) * 100.0
-}
-
-pub fn media_lsi(av: &Avaliacao) -> f64 {
-    let valores = [
-        calcular_lsi(av.single_hop_dir, av.single_hop_esq),
-        calcular_lsi(av.triple_hop_dir, av.triple_hop_esq),
-        calcular_lsi(av.crossover_dir, av.crossover_esq),
-        calcular_lsi(av.six_meter_dir, av.six_meter_esq),
-    ];
-    let positivos: Vec<f64> = valores.iter().copied().filter(|&v| v > 0.0).collect();
-    if positivos.is_empty() { return 0.0; }
-    positivos.iter().sum::<f64>() / positivos.len() as f64
 }
 
 pub fn parse_decimal(s: &str) -> f64 {
