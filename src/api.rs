@@ -57,6 +57,10 @@ pub async fn buscar_paciente(id: &str) -> Result<Paciente, String> {
 }
 
 pub async fn salvar_paciente(paciente: &Paciente) -> Result<Paciente, String> {
+    if let Ok(json) = serde_json::to_string(paciente) {
+        web_sys::console::log_1(&format!("[API] POST /pacientes → {}", json).into());
+    }
+
     let resp = Request::post(&format!("{BASE}/pacientes"))
         .header("Authorization", &bearer())
         .header("Content-Type", "application/json")
@@ -69,7 +73,10 @@ pub async fn salvar_paciente(paciente: &Paciente) -> Result<Paciente, String> {
     if resp.ok() {
         resp.json::<Paciente>().await.map_err(|e| e.to_string())
     } else {
-        Err(format!("Erro ao salvar paciente ({})", resp.status()))
+        let status = resp.status();
+        let corpo = resp.text().await.unwrap_or_default();
+        web_sys::console::error_1(&format!("[API] Erro {}: {}", status, corpo).into());
+        Err(format!("Erro {} — {}", status, corpo))
     }
 }
 

@@ -1,18 +1,36 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+
+// Aceita tanto String quanto Number do Java (Double/BigDecimal → String formatada)
+fn de_numero_ou_string<'de, D: Deserializer<'de>>(d: D) -> Result<String, D::Error> {
+    use serde::de::{self, Visitor};
+    struct V;
+    impl<'de> Visitor<'de> for V {
+        type Value = String;
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            write!(f, "número ou string")
+        }
+        fn visit_str<E: de::Error>(self, v: &str) -> Result<String, E> { Ok(v.to_owned()) }
+        fn visit_string<E: de::Error>(self, v: String) -> Result<String, E> { Ok(v) }
+        fn visit_f64<E: de::Error>(self, v: f64) -> Result<String, E> { Ok(format!("{:.2}", v)) }
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<String, E> { Ok(v.to_string()) }
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<String, E> { Ok(v.to_string()) }
+    }
+    d.deserialize_any(V)
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Paciente {
     pub id: Option<String>,
     pub nome: String,
+    #[serde(deserialize_with = "de_numero_ou_string")]
     pub peso: String,
+    #[serde(deserialize_with = "de_numero_ou_string")]
     pub altura: String,
-    #[serde(rename = "dataCirugia")]
+    #[serde(rename = "dataCirurgia")]
     pub data_cirugia: String,
-
-    #[serde(rename = "membroOperado")]
+    #[serde(rename = "membroOp")]
     pub membro_operado: Option<String>,
-
-    #[serde(rename = "diasPosOperatorio")]
+    #[serde(rename = "diasPosRlca")]
     pub dias_pos_operatorio: Option<i64>,
 }
 
