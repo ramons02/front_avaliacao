@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "cleanUrls": true,
   "outputDirectory": "dist",
   "rewrites": [
     {
@@ -12,7 +11,7 @@
       "destination": "https://hupstesteback-production.up.railway.app/api/:path*"
     },
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]

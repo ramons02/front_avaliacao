@@ -9,7 +9,13 @@ use crate::components::avaliacao_form::AvaliacaoFormPage;
 
 fn switch(route: Route) -> Html {
     match route {
-        Route::Login => html! { <LoginPage /> },
+        Route::Login => {
+            if esta_logado() {
+                html! { <Redirect<Route> to={Route::Pacientes} /> }
+            } else {
+                html! { <LoginPage /> }
+            }
+        }
         Route::Pacientes => html! { <ProtectedRoute><PacienteListPage /></ProtectedRoute> },
         Route::AvaliacaoNovo { id } => html! { <ProtectedRoute><AvaliacaoFormPage paciente_id={id} /></ProtectedRoute> },
         Route::Raiz => html! { <Redirect<Route> to={Route::Login} /> },
@@ -24,9 +30,14 @@ fn protected_route(props: &ChildrenProps) -> Html {
     html! { <>{ props.children.clone() }</> }
 }
 
-#[function_component(App)]
-pub fn app() -> Html {
+#[function_component(Navbar)]
+fn navbar() -> Html {
+    let route = use_route::<Route>().unwrap_or(Route::Raiz);
     let logado = esta_logado();
+
+    if !logado || route == Route::Login {
+        return html! {};
+    }
 
     let sair = Callback::from(|_: MouseEvent| {
         remover_token();
@@ -38,24 +49,29 @@ pub fn app() -> Html {
     });
 
     html! {
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-0">
+            <div class="container">
+                <span class="navbar-brand fw-bold">
+                    <i class="bi bi-activity me-2"></i>{"Hups Teste"}
+                </span>
+                <div class="navbar-nav me-auto">
+                    <Link<Route> to={Route::Pacientes} classes="nav-link text-white">
+                        <i class="bi bi-people me-1"></i>{"Pacientes"}
+                    </Link<Route>>
+                </div>
+                <button class="btn btn-outline-light btn-sm" onclick={sair}>
+                    <i class="bi bi-box-arrow-right me-1"></i>{"Sair"}
+                </button>
+            </div>
+        </nav>
+    }
+}
+
+#[function_component(App)]
+pub fn app() -> Html {
+    html! {
         <BrowserRouter>
-            if logado {
-                <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-0">
-                    <div class="container">
-                        <span class="navbar-brand fw-bold">
-                            <i class="bi bi-activity me-2"></i>{"Hups Teste"}
-                        </span>
-                        <div class="navbar-nav me-auto">
-                            <Link<Route> to={Route::Pacientes} classes="nav-link text-white">
-                                <i class="bi bi-people me-1"></i>{"Pacientes"}
-                            </Link<Route>>
-                        </div>
-                        <button class="btn btn-outline-light btn-sm" onclick={sair}>
-                            <i class="bi bi-box-arrow-right me-1"></i>{"Sair"}
-                        </button>
-                    </div>
-                </nav>
-            }
+            <Navbar />
             <Switch<Route> render={switch} />
         </BrowserRouter>
     }
