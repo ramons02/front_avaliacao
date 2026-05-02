@@ -9,10 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Comandos
 
 ```bash
-# Instalar o Trunk (ferramenta de build), se não estiver instalado
-cargo install trunk
-
-# Servidor de desenvolvimento (porta 3001, proxy /api → localhost:8080)
+# Servidor de desenvolvimento (porta 3001, proxy /api/v1 → localhost:8080)
 trunk serve
 
 # Build de produção (WASM + assets em dist/)
@@ -21,14 +18,17 @@ trunk build --release
 # Verificar tipos sem compilar o WASM
 cargo check
 
-# Linter
+# Linter (obrigatório usar o target WASM)
 cargo clippy --target wasm32-unknown-unknown
 
 # Formatar código
 cargo fmt
+
+# Instalar o Trunk (v0.21.14 — mesma versão usada no CI)
+cargo install trunk
 ```
 
-> A aplicação requer o backend rodando em `http://localhost:8080` para que as chamadas de API funcionem em desenvolvimento.
+> A aplicação requer o backend em `http://localhost:8080`. Em produção, o Vercel proxeia `/api/v1/*` para o Railway.
 
 ## Arquitetura
 
@@ -36,79 +36,59 @@ cargo fmt
 
 | Camada | Ferramenta |
 |---|---|
-| Framework | Yew 0.21 (Rust → WASM) |
+| Framework | Yew 0.21 (Rust → WASM, CSR) |
 | Build | Trunk |
 | Roteamento | yew-router 0.18 |
 | HTTP | gloo-net 0.6 |
 | Estado de autenticação | gloo-storage 0.3 (LocalStorage) |
-| Gráficos | Chart.js 4.4 (JS inline via wasm-bindgen) + Plotters (SVG para PDF) |
-| PDF | html2pdf.js 0.10 (gerado no cliente) |
+| Gráficos | Chart.js 4.4 (JS inline via `wasm_bindgen(inline_js)`) + Plotters 0.3 (SVG para PDF) |
+| PDF | html2pdf.js 0.10 invocado via `js_sys::Function::new_with_args` |
 | Interface | Bootstrap 5.3 + Bootstrap Icons |
-
-### Mapa de Módulos
-
-```
-src/
-├── main.rs          # Ponto de entrada Yew + inicialização do wasm-logger
-├── router.rs        # Enum de rotas e mapeamento do Switch
-├── models.rs        # Todas as structs de dados + helpers de LSI
-├── api.rs           # Todas as chamadas HTTP (autenticação Bearer)
-├── auth.rs          # Token JWT no LocalStorage (chave: "auth_token")
-├── pdf.rs           # Geração do relatório HTML+SVG via Plotters
-└── components/
-    ├── mod.rs
-    ├── app.rs           # Componente raiz, navbar, ProtectedRoute
-    ├── login.rs         # Formulário de autenticação → salva token → redireciona
-    ├── paciente_list.rs # Tabela de pacientes + formulário de cadastro + geração de PDF
-    ├── avaliacao_form.rs# Formulário bilateral dos 4 testes + exibição de LSI em tempo real
-    ├── numeric_input.rs # Input reutilizável: apenas dígitos, formata como "X,XX"
-    └── lsi_chart.rs     # Gráfico Chart.js com evolução do LSI entre avaliações
-```
-
-### Rotas
-
-| Caminho | Componente | Autenticação |
-|---|---|---|
-| `/login` | `LoginPage` | Não |
-| `/pacientes` | `PacienteListPage` | Sim |
-| `/avaliacoes/novo/:id` | `AvaliacaoFormPage` | Sim |
-| `/` | Redireciona para `/login` | — |
-
-Acesso não autenticado às rotas protegidas redireciona para `/login` via o wrapper `ProtectedRoute` em `app.rs`.
 
 ### Fluxo de Dados
 
-1. Login → JWT armazenado no LocalStorage via `auth.rs`
-2. Toda chamada em `api.rs` lê o token e adiciona `Authorization: Bearer <token>`
-3. URL base da API é `/api/v1` (proxy do Trunk em dev, servido pelo backend em prod)
+1. Login → JWT armazenado no LocalStorage via `auth.rs` (chave: `"auth_token"`)
+2. Toda chamada em `api.rs` lê o token e injeta `Authorization: Bearer <token>`
+3. URL base da API é `/api/v1` (proxy do Trunk em dev; reescrita do Vercel em prod)
 4. Componentes são stateful via hooks `use_state`/`use_effect` do Yew
-5. O relatório PDF é construído como string HTML em `pdf.rs` (com gráficos SVG embutidos do Plotters), depois repassado ao `html2pdf.js` via interop JavaScript
 
-### Lógica de Domínio Principal (`models.rs`)
+### Convenções Críticas
 
-- `calcular_lsi(a, b)` → `(a.min(b) / a.max(b)) * 100.0`
-- `media_lsi(avaliacao)` → média dos valores de LSI dos 4 testes bilaterais
-- `parse_decimal(s)` → substitui `,` por `.` antes de converter para float (locale brasileiro)
-- `definir_cores_por_membro(membro_operado)` → atribui classes de cor do Bootstrap; membro operado = vermelho, membro sadio = azul
+**Tratamento de erros da API:** Respostas 401/403 retornam `Err("UNAUTHORIZED")`. Os componentes detectam essa string e chamam `redirecionar_login()` (limpa o token e redireciona via `window.location.set_href`).
 
-### Os 4 Testes Bilaterais (struct `Avaliacao`)
+**Deserialização numérica:** O backend Java pode enviar campos numéricos como JSON number ou como string formatada. O deserializador customizado `de_numero_ou_string` em `models.rs` lida com ambos os casos para `peso` e `altura` do `Paciente`.
 
-Cada teste possui duas medições (membro sadio / membro operado):
+**Convenção de entrada decimal:** O componente `NumericInput` impõe o formato `X,XX`. A função `parse_decimal()` em `models.rs` converte vírgula em ponto antes de operações aritméticas. A função `mascara_decimal()` em `paciente_list.rs` é usada para campos não-`NumericInput` (peso, altura no formulário de cadastro).
 
-1. Single Hop for Distance
-2. Triple Hop for Distance
-3. Crossover Hop for Distance
-4. 6-meter Timed Hop
+**Cálculo de LSI:** Existem duas variantes com semânticas diferentes:
+- `calcular_lsi(a, b)` em `models.rs` → `(min/max) × 100` — simétrica, usada nos formulários e gráficos
+- Cálculo no relatório (`pdf.rs`) → `(operado/sadio) × 100` — direcional, usa o membro operado para identificar qual lado é o operado
 
-### Interoperabilidade com JavaScript
+**Gráfico LSI:** `lsi_chart.rs` embute o código JS via `#[wasm_bindgen(inline_js)]`. O Chart.js precisa estar carregado no `index.html` *antes* da inicialização do WASM, caso contrário a função `renderLsiChart` não existe quando é chamada.
 
-`lsi_chart.rs` chama o Chart.js diretamente usando `wasm_bindgen::JsValue` e `web_sys`. Ao modificar o comportamento dos gráficos, as alterações devem estar alinhadas com a API do Chart.js 4.x carregada no `index.html`.
+### Deployment
 
-`pdf.rs` aciona o `html2pdf()` a partir de `paciente_list.rs` via função JavaScript chamada pelo `wasm_bindgen`. O ID do elemento DOM gerado por `pdf.rs` deve corresponder ao que o código espera.
+- **Vercel (`vercel.json`):** `buildCommand` aponta para `vercel-build.sh`, que instala Rust + target wasm32 + Trunk v0.21.14 no CI.
+- **Proxy de produção:** `/api/v1/*` é reescrito para `https://hupstesteback-production.up.railway.app/api/v1/$1`.
+- **SPA routing:** `rewrite /.*` → `/index.html` garante que rotas do yew-router funcionem no reload.
+- **Assets estáticos:** O diretório `public/` é copiado para `dist/` pelo Trunk (ex: `_redirects`).
 
-### Convenção de Entrada Decimal
+### Mapeamento de Campos JSON ↔ Rust (`Avaliacao`)
 
-O componente `NumericInput` impõe o formato decimal brasileiro (`X,XX`). Internamente, `parse_decimal()` em `models.rs` converte vírgulas em pontos antes das operações aritméticas. Todos os novos campos numéricos devem seguir o mesmo padrão.
+Os campos JSON usam `camelCase` com sufixos `Direita`/`Esquerda` enquanto Rust usa `_dir`/`_esq`:
+
+| JSON | Rust |
+|---|---|
+| `singleHopDireita` | `single_hop_dir` |
+| `singleHopEsquerda` | `single_hop_esq` |
+| `tripleHopDireita` | `triple_hop_dir` |
+| `tripleHopEsquerda` | `triple_hop_esq` |
+| `crossoverHopDireita` | `crossover_dir` |
+| `crossoverHopEsquerda` | `crossover_esq` |
+| `sixMeterDireita` | `six_meter_dir` |
+| `sixMeterEsquerda` | `six_meter_esq` |
+
+`Paciente` também usa `dataCirugia` e `diasPosOperatorio` como nomes JSON.
 
 ## Regras
 - Toda a documentação em Português-BR.
