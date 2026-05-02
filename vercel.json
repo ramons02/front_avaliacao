@@ -12,7 +12,7 @@
       "destination": "https://hupstesteback-production.up.railway.app/api/:path*"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ]

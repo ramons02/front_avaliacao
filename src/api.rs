@@ -26,7 +26,14 @@ pub async fn login(email: &str, senha: &str) -> Result<LoginResponse, String> {
     if resp.ok() {
         resp.json::<LoginResponse>().await.map_err(|e| e.to_string())
     } else {
-        Err(format!("Credenciais inválidas ({})", resp.status()))
+        let status = resp.status();
+        let corpo = resp.text().await.unwrap_or_default();
+        web_sys::console::error_1(&format!("[Auth] {} — {}", status, corpo).into());
+        if status == 401 {
+            Err("Email ou senha inválidos.".to_string())
+        } else {
+            Err(format!("Erro no servidor ({}). Verifique o console.", status))
+        }
     }
 }
 
