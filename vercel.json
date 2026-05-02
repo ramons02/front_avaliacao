@@ -1,19 +1,17 @@
 {
   "version": 2,
-  "framework": null,
-  "buildCommand": "bash vercel-build.sh",
-  "outputDirectory": "dist",
+  "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/api/v1/(.*)",
-      "destination": "https://hupstesteback-production.up.railway.app/api/v1/$1"
+      "source": "/api/v1/:path*",
+      "destination": "https://hupstesteback-production.up.railway.app/api/v1/:path*"
     },
     {
-      "source": "/api/(.*)",
-      "destination": "https://hupstesteback-production.up.railway.app/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://hupstesteback-production.up.railway.app/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
